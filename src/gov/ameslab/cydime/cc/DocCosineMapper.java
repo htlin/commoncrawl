@@ -33,7 +33,7 @@ public class DocCosineMapper extends Mapper<Text, ArchiveReader, Text, DoubleWri
 	protected void setup(Context context) throws IOException, InterruptedException {
 		super.setup(context);
 		
-		mBaseDoc = loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/ameslab.txt");
+		mBaseDoc = loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.ameslab.gov");
 	}
 	
 	private Histogram<String> loadHistogram(String text) throws IOException {

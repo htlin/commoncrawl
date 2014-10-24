@@ -19,12 +19,12 @@ public class Tokenizer {
 	private static int RUNS = 1;
 
 	public static void main(String[] args) throws IOException {
-		String doc = FileUtils.readFileToString(new File("ameslab.txt"));
+		String doc = FileUtils.readFileToString(new File("data/www.ameslab.gov"));
 //		System.out.println(doc);
 		
 		long time = System.currentTimeMillis();
 		for (int i = 0; i < RUNS; i++) {
-			tokStream("ameslab.txt");
+			tokStream("data/www.ameslab.gov");
 		}
 		time = System.currentTimeMillis() - time;
 		System.out.println(time);
