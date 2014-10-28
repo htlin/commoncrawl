@@ -37,7 +37,7 @@ public class WETCosine extends Configured implements Tool {
 		Configuration conf = getConf();
 		Job job = new Job(conf);
 		job.setJarByClass(WETCosine.class);
-		job.setNumReduceTasks(1);
+//		job.setNumReduceTasks(1);
 		
 //		String inputPath = "s3n://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2014-35/segments/1409535925433.20/wet/CC-MAIN-20140901014525-00468-ip-10-180-136-8.ec2.internal.warc.wet.gz";
 		String inputPath = "s3n://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2014-35/segments/1409535925433.20/wet/*.warc.wet.gz";

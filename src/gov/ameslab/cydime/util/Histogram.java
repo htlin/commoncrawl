@@ -45,7 +45,11 @@ import java.util.Set;
 
 public class Histogram<T> {
 
-	private Map<T,Integer> mHistogram;
+	private static class Count {
+		public int Val = 0;
+	}
+	
+	private Map<T, Count> mHistogram;
 	private double mTwoNorm;
 	
 	public Histogram() {
@@ -57,9 +61,9 @@ public class Histogram<T> {
 	}
 
 	public int get(T a) {
-		Integer v = mHistogram.get(a);
-		if (v == null) return 0;
-		else return v;
+		Count c = mHistogram.get(a);
+		if (c == null) return 0;
+		else return c.Val;
 	}
 	
 	public int size() {
@@ -67,15 +71,16 @@ public class Histogram<T> {
 	}
 
 	public void increment(T a) {
-		increment(a, 1);
+		Count c = mHistogram.get(a);
+		if (c == null) {
+			c = new Count();
+			mHistogram.put(a, c);
+		}
+		
+		c.Val++;
 	}
 	
-	public void increment(T a, int inc) {
-		int count = get(a);
-		mHistogram.put(a, count + inc);
-	}
-	
-	public Set<Entry<T, Integer>> entrySet() {
+	public Set<Entry<T, Count>> entrySet() {
 		return mHistogram.entrySet();
 	}
 	
@@ -83,24 +88,19 @@ public class Histogram<T> {
 		return mHistogram.keySet();
 	}
 	
-	public void add(Histogram<T> o) {
-		for (Entry<T, Integer> entry : o.entrySet()) {
-			increment(entry.getKey(), entry.getValue());
-		}
-	}
-	
 	public void clear() {
 		mHistogram.clear();
+		mTwoNorm = 0.0;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder();
 		b.append("{ ");
-		for (Entry<T, Integer> entry : mHistogram.entrySet()) {
+		for (Entry<T, Count> entry : mHistogram.entrySet()) {
 			b.append(entry.getKey())
 				.append("=")
-				.append(entry.getValue())
+				.append(entry.getValue().Val)
 				.append(" ");
 		}
 		b.append("}");
@@ -109,8 +109,8 @@ public class Histogram<T> {
 
 	public void cacheTwoNorm() {
 		mTwoNorm = 0.0;
-		for (int v : mHistogram.values()) {
-			mTwoNorm += v * v;
+		for (Count c : mHistogram.values()) {
+			mTwoNorm += c.Val * c.Val;
 		}
 		mTwoNorm = Math.sqrt(mTwoNorm);
 	}
@@ -124,9 +124,9 @@ public class Histogram<T> {
 		}
 		
 		int sum = 0;
-		for (Entry<T, Integer> entry : hShort.entrySet()) {
+		for (Entry<T, Count> entry : hShort.entrySet()) {
 			T key = entry.getKey();
-			int vShort = entry.getValue();
+			int vShort = entry.getValue().Val;
 			int vLong = hLong.get(key);
 			sum += vShort * vLong;
 		}

@@ -63,8 +63,20 @@ public class Tokenizer {
 		BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 		List<String> strs = new ArrayList<String>();
 		StreamTokenizer tok = new StreamTokenizer(in);
-		while (tok.nextToken() != StreamTokenizer.TT_EOF) {
-			strs.add(tok.sval);
+		tok.resetSyntax();
+		tok.lowerCaseMode(true);
+		tok.wordChars('A', 'Z');
+		tok.wordChars('a', 'z');
+		tok.wordChars('\u00A0', '\u00FF');
+		tok.whitespaceChars('\u0000', '\u0020');
+		tok.eolIsSignificant(false);
+		while (true) {
+			int t = tok.nextToken();
+			if (t == StreamTokenizer.TT_WORD) {
+				strs.add(tok.sval);
+			} else if (t == StreamTokenizer.TT_EOF) {
+				break;
+			}
 		}
 		
 		if (PRINT) System.out.println(strs.size() + " " + strs);

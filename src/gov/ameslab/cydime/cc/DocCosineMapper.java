@@ -4,6 +4,7 @@ import gov.ameslab.cydime.util.CUtil;
 import gov.ameslab.cydime.util.Histogram;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -22,18 +23,35 @@ public class DocCosineMapper extends Mapper<Text, ArchiveReader, Text, DoubleWri
 	
 	static final Logger LOG = Logger.getLogger(DocCosineMapper.class);
 	
+	//http://www.textfixer.com/resources/common-english-words.txt
 	private static final Set<String> STOPWORDS = CUtil.asSet("a", "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and", "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could", "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got", "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in", "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might", "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only", "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since", "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they", "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when", "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you", "your");
 	
 	private Text mOutKey = new Text();
 	private DoubleWritable mOutVal = new DoubleWritable(0.0);
 	
-	private Histogram<String> mBaseDoc;
+	private List<Histogram<String>> mBaseDocs;
+	private String[] mBasePrefixes;
 	
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
 		super.setup(context);
 		
-		mBaseDoc = loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.ameslab.gov");
+		mBaseDocs = CUtil.makeList();
+		mBaseDocs.add(loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.ameslab.gov"));
+		mBaseDocs.add(loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.anl.gov"));
+		mBaseDocs.add(loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.bnl.gov"));
+		mBaseDocs.add(loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.nrel.gov"));
+		mBaseDocs.add(loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.ornl.gov"));
+		mBaseDocs.add(loadHistogram(context, "s3n://commoncrawl.ameslab.gov/in/www.pnl.gov"));
+		
+		mBasePrefixes = new String[] {
+			"M",
+			"A",
+			"B",
+			"N",
+			"O",
+			"P"
+		};
 	}
 	
 	private Histogram<String> loadHistogram(String text) throws IOException {
@@ -83,14 +101,18 @@ public class DocCosineMapper extends Mapper<Text, ArchiveReader, Text, DoubleWri
 					
 					String content = IOUtils.toString(r);
 					Histogram<String> doc = loadHistogram(content);
+					String outKey = null;
 					double cosine = 0.0;
 					if (doc.getTwoNorm() > 0.0) {
-						cosine = Histogram.getCosine(mBaseDoc, doc);
+						for (int i = 0; i < mBasePrefixes.length; i++) {
+							outKey = mBasePrefixes[i] + hostname;
+							cosine = Histogram.getCosine(mBaseDocs.get(i), doc);
+							
+							mOutKey.set(outKey);
+							mOutVal.set(cosine);
+							context.write(mOutKey, mOutVal);
+						}
 					}
-					
-					mOutKey.set(hostname);
-					mOutVal.set(cosine);
-					context.write(mOutKey, mOutVal);
 				}
 			} catch (Exception ex) {
 				LOG.error("Caught Exception", ex);
