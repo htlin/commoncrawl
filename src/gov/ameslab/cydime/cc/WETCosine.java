@@ -33,18 +33,19 @@ public class WETCosine extends Configured implements Tool {
 	 * @return	0 if the Hadoop job completes successfully and 1 otherwise.
 	 */
 	@Override
-	public int run(String[] arg0) throws Exception {
+	public int run(String[] args) throws Exception {
 		Configuration conf = getConf();
 		Job job = new Job(conf);
 		job.setJarByClass(WETCosine.class);
-//		job.setNumReduceTasks(1);
+		job.setNumReduceTasks(4);
 		
-//		String inputPath = "s3n://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2014-35/segments/1409535925433.20/wet/CC-MAIN-20140901014525-00468-ip-10-180-136-8.ec2.internal.warc.wet.gz";
-		String inputPath = "s3n://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2014-35/segments/1409535925433.20/wet/*.warc.wet.gz";
-		LOG.info("Input path: " + inputPath);
-		FileInputFormat.addInputPath(job, new Path(inputPath));
+		for (int i = 3; i < args.length; i++) {
+			String inputPath = "s3n://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2014-35/segments/" + args[i] + "/wet/*.warc.wet.gz";
+			LOG.info("Input path: " + inputPath);
+			FileInputFormat.addInputPath(job, new Path(inputPath));
+		}
 		
-		String outputPath = "s3n://commoncrawl.ameslab.gov/out/";
+		String outputPath = "s3n://commoncrawl.ameslab.gov/out/" + args[2];
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 		
 		job.setInputFormatClass(WARCFileInputFormat.class);
@@ -54,8 +55,8 @@ public class WETCosine extends Configured implements Tool {
 	    job.setOutputValueClass(DoubleWritable.class);
 	    
 	    job.setMapperClass(DocCosineMapper.class);
-	    job.setCombinerClass(DoubleMaxReducer.class);
-		job.setReducerClass(DoubleMaxReducer.class);
+//	    job.setCombinerClass(DoubleMaxReducer.class);
+		job.setReducerClass(DoubleAvgReducer.class);
 		
 	    if (job.waitForCompletion(true)) {
 	    	return 0;

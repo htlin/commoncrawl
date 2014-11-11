@@ -6,18 +6,21 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
-public class DoubleMaxReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
+public class DoubleAvgReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
 
 	private DoubleWritable mResult = new DoubleWritable();
 	
 	@Override
 	public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
+		int count = 0;
 		double result = 0.0;
 		for (DoubleWritable v : values) {
-			double d = v.get();
-			if (d > result) {
-				result = d;
-			}
+			count++;
+			result += v.get();
+		}
+		
+		if (count > 0) {
+			result /= count;
 		}
 		
 		mResult.set(result);

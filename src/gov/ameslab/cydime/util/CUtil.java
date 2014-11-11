@@ -102,6 +102,28 @@ public class CUtil {
 		return strings;
 	}
 
+	public static <T> void rescale(Map<T, Double> count) {
+		Double min = null;
+		Double max = null;
+		for (Double v : count.values()) {
+			if (min == null || v < min) {
+				min = v;
+			}
+			if (max == null || v > max) {
+				max = v;
+			}
+		}
+		
+		double range = max - min;
+		if (range <= 0.0) return;
+		
+		for (T key : new HashSet<T>(count.keySet())) {
+			double v = count.get(key);
+			v = (v - min) / range;
+			count.put(key, v);
+		}
+	}
+
 	public static <K,V> Map<K, V> subMap(Map<K, V> map, Set<K> keySet) {
 		Map<K, V> subMap = makeMap();
 		for (K key : keySet) {

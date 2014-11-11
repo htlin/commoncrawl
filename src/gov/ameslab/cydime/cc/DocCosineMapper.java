@@ -76,6 +76,8 @@ public class DocCosineMapper extends Mapper<Text, ArchiveReader, Text, DoubleWri
 	}
 
 	private String getHostname(String url) {
+		if (url.indexOf("@") >= 0) return null;
+		
 		int begin = url.indexOf("//");
 		if (begin < 0) {
 			begin = 0;
@@ -83,12 +85,28 @@ public class DocCosineMapper extends Mapper<Text, ArchiveReader, Text, DoubleWri
 			begin = begin + 2;
 		}
 		
-		int end = url.indexOf("/", begin);
-		if (end < 0) {
-			end = url.length();
+		int end = url.length();
+		int index = url.indexOf("/", begin);
+		if (index >= 0 && index < end) {
+			end = index;
 		}
 		
-		return url.substring(begin, end);
+		index = url.indexOf("?", begin);
+		if (index >= 0 && index < end) {
+			end = index;
+		}
+		
+		index = url.indexOf(":", begin);
+		if (index >= 0 && index < end) {
+			end = index;
+		}
+		
+		url = url.substring(begin, end);
+		while (url.endsWith(".")) {
+			url = url.substring(0, url.length() - 1);
+		}
+		
+		return url;
 	}
 	
 	@Override
@@ -98,6 +116,7 @@ public class DocCosineMapper extends Mapper<Text, ArchiveReader, Text, DoubleWri
 				if (r.getHeader().getMimetype().equals("text/plain")) {
 //					LOG.debug(r.getHeader().getUrl() + " -- " + r.available());
 					String hostname = getHostname(r.getHeader().getUrl().toLowerCase());
+					if (hostname == null) continue;
 					
 					String content = IOUtils.toString(r);
 					Histogram<String> doc = loadHistogram(content);
